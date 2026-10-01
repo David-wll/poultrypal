@@ -7,7 +7,7 @@ def send_sms(phone_number, message):
     Send SMS via Africa's Talking.
     During development, prints to terminal instead.
     """
-    if settings.DEBUG:
+    if settings.DEBUG or not settings.AFRICASTALKING_API_KEY:
         # Development — print to terminal
         print(f"\n{'='*50}")
         print(f"SMS TO: {phone_number}")
