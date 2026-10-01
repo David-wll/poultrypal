@@ -10,6 +10,7 @@ import {
 import { CircularProgress } from '@mui/material'
 import { formatNaira } from '../utils/formatCurrency'
 import { calcSurvivalRate } from '../utils/survivalRate'
+import BottomNav from '../components/BottomNav'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -407,28 +408,7 @@ export default function Dashboard({ navigate }) {
 
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 
-                      shadow-lg flex z-50">
-        {[
-          { icon: <Agriculture />, label: 'Flocks', active: true,   action: () => navigate('dashboard') },
-          { icon: <Vaccines />,    label: 'Vaccines', action: () => navigate('vaccinationCalendar') },
-          { icon: <Assessment />, label: 'Reports', color: 'text-amber-600', bg: 'bg-amber-50',   action: () => navigate('reportsLanding') },
-          { icon: <Person />,      label: 'Profile',  action: () => navigate('profile') },
-        ].map((item, i) => (
-          <button
-            key={i}
-            onClick={item.action}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 
-                        transition-colors
-              ${item.active
-                ? 'text-primary-600'
-                : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            {item.icon}
-            <span className="text-xs font-bold">{item.label}</span>
-          </button>
-        ))}
-      </nav>
+      <BottomNav active="dashboard" navigate={navigate} />
 
       {/* Flock picker modal for Log Feed */}
       {showFlockPicker && (

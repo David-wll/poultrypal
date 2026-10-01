@@ -15,6 +15,7 @@ import SetupProfile from './pages/SetupProfile'
 import Profile from './pages/Profile'
 
 import { useFlocks } from './context/FlockContext'
+import BottomNav from './components/BottomNav'
 
 function ReportsLanding({ navigate }) {
   const { flocks } = useFlocks()
@@ -147,25 +148,7 @@ function ReportsLanding({ navigate }) {
       </div>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 
-                      shadow-lg flex z-50">
-        {[
-          { icon: '🏠', label: 'Flocks',   action: () => navigate('dashboard') },
-          { icon: '💉', label: 'Vaccines', action: () => navigate('vaccinationCalendar') },
-          { icon: '📊', label: 'Reports',  action: () => {},                              active: true },
-          { icon: '👤', label: 'Profile',  action: () => navigate('profile') },
-        ].map((item, i) => (
-          <button
-            key={i}
-            onClick={item.action}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors
-              ${item.active ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            <span className="text-xl">{item.icon}</span>
-            <span className="text-xs font-bold">{item.label}</span>
-          </button>
-        ))}
-      </nav>
+      <BottomNav active="reportsLanding" navigate={navigate} />
     </div>
   )
 }

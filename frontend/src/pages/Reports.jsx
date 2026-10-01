@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import {
   ArrowBack, TrendingUp, TrendingDown,
   Agriculture, Assessment, Receipt,
-  CheckCircle, Warning, Vaccines,
+  CheckCircle, Warning, Vaccines, Person,
 } from '@mui/icons-material'
 import { CircularProgress } from '@mui/material'
 import api from '../services/api'
 import { calcSurvivalRate } from '../utils/survivalRate'
+import BottomNav from '../components/BottomNav'
 
 const BIRD_EMOJI = {
   broiler: '🐔', layer: '🥚', cockerel: '🐓', turkey: '🦃', duck: '🦆'
@@ -428,17 +429,8 @@ export default function Reports({ flockId, navigate }) {
           </div>
         )}
       </div>
-
-      {/* Bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 
-                      shadow-lg px-4 py-4 max-w-2xl mx-auto">
-        <button
-          onClick={() => navigate('flockDetail', flockId)}
-          className="btn-primary py-3"
-        >
-          ← Back to Flock Details
-        </button>
-      </div>
+      {/* Bottom nav */}
+      <BottomNav active="reportsLanding" navigate={navigate} />
     </div>
   )
 }

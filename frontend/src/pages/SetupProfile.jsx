@@ -12,15 +12,6 @@ const NIGERIAN_STATES = [
 const STEPS = [
   { label: 'Personal', emoji: '👤' },
   { label: 'Farm',     emoji: '🏡' },
-  { label: 'Language', emoji: '🌍' },
-]
-
-const LANGUAGES = [
-  { code: 'en',     label: 'English', flag: '🇬🇧' },
-  { code: 'pidgin', label: 'Pidgin',  flag: '🇳🇬' },
-  { code: 'yo',     label: 'Yoruba',  flag: '🟢' },
-  { code: 'ha',     label: 'Hausa',   flag: '🔵' },
-  { code: 'ig',     label: 'Igbo',    flag: '🔴' },
 ]
 
 export default function SetupProfile({ onComplete }) {
@@ -205,47 +196,6 @@ export default function SetupProfile({ onComplete }) {
                   onChange={e => set('lga', e.target.value)}
                 />
               </div>
-            </div>
-          )}
-
-          {/* Step 2 */}
-          {step === 2 && (
-            <div className="space-y-5">
-              <div>
-                <div className="text-4xl mb-3">🌍</div>
-                <h3 className="text-xl font-black text-gray-900 mb-1">
-                  Language Preference
-                </h3>
-                <p className="text-gray-500 text-sm">
-                  Choose the language you're most comfortable with.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {LANGUAGES.map(lang => (
-                  <button
-                    key={lang.code}
-                    onClick={() => set('preferred_language', lang.code)}
-                    className={`
-                      flex flex-col items-center gap-2 p-4 rounded-2xl border-2 
-                      transition-all duration-200 font-sans
-                      ${form.preferred_language === lang.code
-                        ? 'border-primary-500 bg-primary-50 shadow-md shadow-primary-100'
-                        : 'border-gray-200 bg-gray-50 hover:border-gray-300'}
-                    `}
-                  >
-                    <span className="text-2xl">{lang.flag}</span>
-                    <span className={`text-sm font-bold
-                      ${form.preferred_language === lang.code
-                        ? 'text-primary-700' : 'text-gray-600'}`}>
-                      {lang.label}
-                    </span>
-                    {form.preferred_language === lang.code && (
-                      <span className="text-xs text-primary-500 font-bold">✓ Selected</span>
-                    )}
-                  </button>
-                ))}
-              </div>
 
               {/* Summary */}
               <div className="bg-primary-50 border border-primary-200 rounded-2xl p-4">
@@ -285,7 +235,7 @@ export default function SetupProfile({ onComplete }) {
                 ← Back
               </button>
             )}
-            {step < 2 ? (
+            {step < 1 ? (
               <button className="btn-primary flex-2" onClick={next}>
                 Continue →
               </button>

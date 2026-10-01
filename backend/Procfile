@@ -1,0 +1,3 @@
+web: gunicorn poultrypal.wsgi --log-file -
+worker: celery -A poultrypal worker --loglevel=info
+beat: celery -A poultrypal beat --loglevel=info

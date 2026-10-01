@@ -6,6 +6,7 @@ import {
 import { CircularProgress } from '@mui/material'
 import { useFlocks } from '../context/FlockContext'
 import { getVaccineSchedule, markAdministered } from '../services/vaccineService'
+import BottomNav from '../components/BottomNav'
 
 const BIRD_EMOJI = {
   broiler: '🐔', layer: '🥚', cockerel: '🐓', turkey: '🦃', duck: '🦆'
@@ -488,30 +489,8 @@ export default function VaccinationCalendar({ navigate }) {
           </div>
         )}
       </div>
-
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t 
-                      border-gray-100 shadow-lg flex z-50">
-        {[
-          { icon: <Agriculture />, label: 'Flocks',   active: false, action: () => navigate('dashboard') },
-          { icon: <Vaccines />,    label: 'Vaccines', active: true,  action: () => {} },
-          { icon: <Assessment />,  label: 'Reports',  active: false, action: () => navigate('reportsLanding') },
-          { icon: <Person />,      label: 'Profile',  active: false, action: () => navigate('profile') },
-        ].map((item, i) => (
-          <button
-            key={i}
-            onClick={item.action}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 
-                        transition-colors
-              ${item.active
-                ? 'text-primary-600'
-                : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            {item.icon}
-            <span className="text-xs font-bold">{item.label}</span>
-          </button>
-        ))}
-      </nav>
+      <BottomNav active="vaccinationCalendar" navigate={navigate} />
     </div>
   )
 }
