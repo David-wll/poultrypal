@@ -33,6 +33,17 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
 
+# Railway (and most PaaS hosts) terminate HTTPS at a proxy and forward
+# requests internally over plain HTTP. Without this, Django doesn't know
+# the original request was secure, which breaks CSRF/session cookie checks.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Django 4+ requires explicitly listing which full origins (scheme + domain)
+# are allowed to submit forms/POST requests — e.g. the admin login page.
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{host}" for host in ALLOWED_HOSTS if host not in ('127.0.0.1', 'localhost', '*')
+]
+
 
 # Application definition
 
