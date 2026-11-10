@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { requestOTP } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
+import PasswordAuthForm from '../components/PasswordAuthForm'
 
 export default function Login({ onLogin }) {
   const { login } = useAuth()
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [step, setStep] = useState('phone')
+    const [mode, setMode] = useState('otp') // 'otp' | 'password'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -99,7 +101,30 @@ export default function Login({ onLogin }) {
         </div>
 
         <div className="w-full max-w-sm">
-          {step === 'phone' ? (
+          {/* Sign-in method switch (hidden while typing an OTP code) */}
+          {(mode === 'password' || step === 'phone') && (
+            <div className="flex bg-gray-100 rounded-2xl p-1 mb-8">
+              {[
+                { id: 'otp', label: 'OTP code' },
+                { id: 'password', label: 'Password' },
+              ].map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => { setMode(m.id); setError('') }}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all
+                    ${mode === m.id
+                      ? 'bg-white text-primary-700 shadow-sm'
+                      : 'text-gray-500'}`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {mode === 'password' ? (
+            <PasswordAuthForm onSuccess={onLogin} />
+          ) : step === 'phone' ? (
             <div className="animate-slide-up">
               {/* Step badge */}
               <span className="badge bg-primary-50 text-primary-700 border-primary-200 mb-4">

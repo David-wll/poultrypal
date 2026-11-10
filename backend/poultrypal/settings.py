@@ -165,6 +165,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+        'DEFAULT_THROTTLE_RATES': {
+        'auth': '30/min',        # per client
+        'auth_phone': '5/min',   # per phone number (brute-force guard)
+    },
 }
 
 AUTH_USER_MODEL = 'farmers.Farmer'

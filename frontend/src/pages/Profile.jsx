@@ -7,6 +7,7 @@ import {
 } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
 import BottomNav from '../components/BottomNav'
+import SetPasswordCard from '../components/SetPasswordCard'
 
 const NIGERIAN_STATES = [
   'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue',
@@ -315,6 +316,8 @@ export default function Profile({ navigate }) {
             ⚠️ {error}
           </div>
         )}
+
+        <SetPasswordCard />
 
         {/* Sign out */}
         <div className="card p-5 animate-slide-up" style={{ animationDelay: '0.2s' }}>

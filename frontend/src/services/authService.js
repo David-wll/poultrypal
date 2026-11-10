@@ -11,3 +11,12 @@ export const getProfile = () =>
 
 export const updateProfile = (data) =>
   api.put('/auth/profile/', data)
+
+export const registerWithPassword = (phone_number, password) =>
+  api.post('/auth/register/', { phone_number, password })
+
+export const loginWithPasswordRequest = (phone_number, password) =>
+  api.post('/auth/login/', { phone_number, password })
+
+export const setPasswordRequest = (new_password, current_password = '') =>
+  api.post('/auth/set-password/', { new_password, current_password })

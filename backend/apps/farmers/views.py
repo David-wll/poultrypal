@@ -3,14 +3,23 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.throttling import ScopedRateThrottle
+from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from .models import Farmer, OTPVerification
 from .serializers import (
     FarmerSerializer,
     FarmerRegistrationSerializer,
     OTPRequestSerializer,
-    OTPVerifySerializer
+    OTPVerifySerializer,
+    PasswordRegisterSerializer,
+    PasswordLoginSerializer,
+    SetPasswordSerializer,
 )
+from .throttles import PhoneRateThrottle
 import random
 
 
@@ -106,3 +115,106 @@ class FarmerProfileView(APIView):
             serializer.save()
             return Response(FarmerSerializer(request.user).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _session_response(farmer, is_new, http_status=status.HTTP_200_OK):
+    """Same response shape as verify-otp, so the frontend handles both alike."""
+    refresh = RefreshToken.for_user(farmer)
+    return Response({
+        'token': str(refresh.access_token),
+        'refresh': str(refresh),
+        'farmer': FarmerSerializer(farmer).data,
+        'is_new_farmer': is_new,
+    }, status=http_status)
+
+
+class PasswordRegisterView(APIView):
+    """Create an account with phone number + password (no OTP needed)."""
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle, PhoneRateThrottle]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        serializer = PasswordRegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # Never attach a password to an existing account here: that would let
+        # anyone claim an OTP-created account just by knowing the phone number.
+        if Farmer.objects.filter(phone_number=data['phone_number']).exists():
+            return Response(
+                {'error': 'An account with this number already exists. '
+                          'Sign in instead, or sign in with OTP and set a '
+                          'password from your profile.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            farmer = Farmer.objects.create_user(
+                phone_number=data['phone_number'],
+                password=data['password'],
+                full_name=data.get('full_name', ''),
+            )
+        except IntegrityError:
+            return Response(
+                {'error': 'An account with this number already exists.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return _session_response(farmer, True, status.HTTP_201_CREATED)
+
+
+class PasswordLoginView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle, PhoneRateThrottle]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        serializer = PasswordLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        farmer = authenticate(
+            request,
+            phone_number=data['phone_number'],
+            password=data['password'],
+        )
+        if farmer is None:
+            # 400, not 401: the frontend logs out and redirects on any 401.
+            # Same message for unknown number and wrong password.
+            return Response(
+                {'error': 'Invalid phone number or password.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return _session_response(farmer, False)
+
+
+class SetPasswordView(APIView):
+    """Signed-in farmers (e.g. via OTP) can add a password, or change theirs.
+    Changing an existing password requires the current one."""
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        serializer = SetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        farmer = request.user
+        data = serializer.validated_data
+
+        has_password = bool(farmer.password) and farmer.has_usable_password()
+        if has_password and not farmer.check_password(
+            data.get('current_password', '')
+        ):
+            return Response(
+                {'error': 'Current password is incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            validate_password(data['new_password'], user=farmer)
+        except DjangoValidationError as e:
+            return Response(
+                {'error': ' '.join(e.messages)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        farmer.set_password(data['new_password'])
+        farmer.save(update_fields=['password'])
+        return Response({'message': 'Password saved.'})

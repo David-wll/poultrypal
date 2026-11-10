@@ -8,7 +8,10 @@ class FarmerManager(BaseUserManager):
         if not phone_number:
             raise ValueError('Phone number is required')
         farmer = self.model(phone_number=phone_number, **extra_fields)
-        farmer.set_unusable_password()
+        if password:
+            farmer.set_password(password)
+        else:
+            farmer.set_unusable_password()  # OTP-only account
         farmer.save(using=self._db)
         return farmer
 
