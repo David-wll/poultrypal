@@ -41,7 +41,13 @@ class FlockReportView(APIView):
             total=Sum('count')
         )['total'] or 0
 
-        total_expenses = feed_cost + other_expenses + medication_cost + vaccine_cost
+        # NEW: replace the old total_expenses line with these lines
+        purchase_cost = flock.purchase_cost or 0
+        total_expenses = (
+            purchase_cost + feed_cost + other_expenses
+            + medication_cost + vaccine_cost
+        )
+
         net_profit = revenue - total_expenses
         survival_rate = round(
             (flock.initial_count - total_deaths) / flock.initial_count * 100, 1
@@ -58,6 +64,7 @@ class FlockReportView(APIView):
             'net_profit': net_profit,
             'survival_rate': survival_rate,
             'total_deaths': total_deaths,
+            'purchase_cost': purchase_cost,
             'cost_per_bird': round(
                 total_expenses / flock.current_count, 2
             ) if flock.current_count > 0 else 0,

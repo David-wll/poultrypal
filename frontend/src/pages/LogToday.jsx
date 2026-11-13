@@ -39,9 +39,17 @@ export default function LogToday({ flockId, navigate }) {
   })
 
   // Form states
+    const savedBag = (() => {
+    try { return JSON.parse(localStorage.getItem('feedBagPrefs')) || {} }
+    catch { return {} }
+  })()
+
   const [feedForm, setFeedForm] = useState({
     feed_type: 'Starter', feed_brand: '',
+    unit: savedBag.unit || 'kg',
     quantity_kg: '', cost_naira: '',
+    bags: '', bag_size_kg: savedBag.bag_size_kg || '25',
+    bag_price: savedBag.bag_price || '',
     date: new Date().toISOString().split('T')[0],
   })
   const [mortalityForm, setMortalityForm] = useState({
@@ -82,23 +90,49 @@ export default function LogToday({ flockId, navigate }) {
   const setExpense  = (f, v) => setExpenseForm(p => ({ ...p, [f]: v }))
   const setMedication = (f, v) => setMedicationForm(p => ({ ...p, [f]: v }))
 
+  const bagsKg = (parseFloat(feedForm.bags) || 0) * (parseFloat(feedForm.bag_size_kg) || 0)
+  const bagsCost = Math.round((parseFloat(feedForm.bags) || 0) * (parseFloat(feedForm.bag_price) || 0) * 100) / 100
+
   const handleSave = async () => {
     setError('')
     setSaving(true)
     try {
       if (activeTab === 'feed') {
-        if (!feedForm.quantity_kg || !feedForm.cost_naira) {
+        const isBags = feedForm.unit === 'bags'
+        if (isBags) {
+          if (!parseFloat(feedForm.bags) || !parseFloat(feedForm.bag_size_kg)) {
+            setError('Enter how many bags and the bag size')
+            setSaving(false)
+            return
+          }
+        } else if (!feedForm.quantity_kg || !feedForm.cost_naira) {
           setError('Please enter quantity and cost')
           setSaving(false)
           return
         }
-        await logFeed(flockId, {
+
+        const payload = {
           date: feedForm.date,
           feed_type: feedForm.feed_type,
           feed_brand: feedForm.feed_brand,
-          quantity_kg: parseFloat(feedForm.quantity_kg),
-          cost_naira: parseFloat(feedForm.cost_naira),
-        })
+        }
+        if (isBags) {
+          payload.bags = parseFloat(feedForm.bags)
+          payload.bag_size_kg = parseFloat(feedForm.bag_size_kg)
+          payload.cost_naira = bagsCost // 0 if no bag price was entered
+        } else {
+          payload.quantity_kg = parseFloat(feedForm.quantity_kg)
+          payload.cost_naira = parseFloat(feedForm.cost_naira)
+        }
+        await logFeed(flockId, payload)
+
+        try {
+          localStorage.setItem('feedBagPrefs', JSON.stringify({
+            unit: feedForm.unit,
+            bag_size_kg: feedForm.bag_size_kg,
+            bag_price: feedForm.bag_price,
+          }))
+        } catch { /* storage unavailable, ignore */ }
       }
 
       if (activeTab === 'mortality') {
@@ -365,49 +399,139 @@ export default function LogToday({ flockId, navigate }) {
               />
             </div>
 
-            {/* Quantity + Cost */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Quantity (kg) *
-                </label>
-                <div className="flex items-center border-2 border-gray-200 rounded-2xl 
-                                bg-gray-50 overflow-hidden focus-within:border-amber-400 
-                                transition-all duration-200">
-                  <span className="px-3 text-base">⚖️</span>
-                  <input
-                    className="flex-1 py-3 pr-3 bg-transparent text-sm font-bold 
-                               text-gray-900 outline-none"
-                    type="number"
-                    placeholder="0.0"
-                    value={feedForm.quantity_kg}
-                    onChange={e => setFeed('quantity_kg', e.target.value)}
-                    min={0}
-                    step={0.5}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Cost (₦) *
-                </label>
-                <div className="flex items-center border-2 border-gray-200 rounded-2xl 
-                                bg-gray-50 overflow-hidden focus-within:border-amber-400 
-                                transition-all duration-200">
-                  <span className="px-3 text-sm font-bold text-gray-400">₦</span>
-                  <input
-                    className="flex-1 py-3 pr-3 bg-transparent text-sm font-bold 
-                               text-gray-900 outline-none"
-                    type="number"
-                    placeholder="0"
-                    value={feedForm.cost_naira}
-                    onChange={e => setFeed('cost_naira', e.target.value)}
-                    min={0}
-                  />
-                </div>
-              </div>
+            {/* Unit toggle */}
+            <div className="flex bg-gray-100 rounded-2xl p-1">
+              {[{ id: 'kg', label: 'Kilograms' }, { id: 'bags', label: 'Bags' }].map(u => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => setFeed('unit', u.id)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all
+                    ${feedForm.unit === u.id
+                      ? 'bg-white text-amber-700 shadow-sm'
+                      : 'text-gray-500'}`}
+                >
+                  {u.label}
+                </button>
+              ))}
             </div>
 
+            {feedForm.unit === 'kg' ? (
+            <>
+
+              {/* Quantity + Cost */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Quantity (kg) *
+                  </label>
+                  <div className="flex items-center border-2 border-gray-200 rounded-2xl 
+                                  bg-gray-50 overflow-hidden focus-within:border-amber-400 
+                                  transition-all duration-200">
+                    <span className="px-3 text-base">⚖️</span>
+                    <input
+                      className="flex-1 py-3 pr-3 bg-transparent text-sm font-bold 
+                                text-gray-900 outline-none"
+                      type="number"
+                      placeholder="0.0"
+                      value={feedForm.quantity_kg}
+                      onChange={e => setFeed('quantity_kg', e.target.value)}
+                      min={0}
+                      step={0.5}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Cost (₦) *
+                  </label>
+                  <div className="flex items-center border-2 border-gray-200 rounded-2xl 
+                                  bg-gray-50 overflow-hidden focus-within:border-amber-400 
+                                  transition-all duration-200">
+                    <span className="px-3 text-sm font-bold text-gray-400">₦</span>
+                    <input
+                      className="flex-1 py-3 pr-3 bg-transparent text-sm font-bold 
+                                text-gray-900 outline-none"
+                      type="number"
+                      placeholder="0"
+                      value={feedForm.cost_naira}
+                      onChange={e => setFeed('cost_naira', e.target.value)}
+                      min={0}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    How many bags? *
+                  </label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[0.25, 0.5, 1, 1.5].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setFeed('bags', String(n))}
+                        className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
+                          ${parseFloat(feedForm.bags) === n
+                            ? 'border-amber-400 bg-amber-50 text-amber-700'
+                            : 'border-gray-200 bg-gray-50 text-gray-600'}`}
+                      >
+                        {n === 0.25 ? '¼' : n === 0.5 ? '½' : n}
+                      </button>
+                    ))}
+                    <input
+                      className="py-2.5 px-2 rounded-xl text-sm font-bold border-2
+                                 border-gray-200 bg-gray-50 outline-none text-center
+                                 focus:border-amber-400"
+                      type="number"
+                      placeholder="Other"
+                      value={feedForm.bags}
+                      onChange={e => setFeed('bags', e.target.value)}
+                      min={0}
+                      step={0.25}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Bag size (kg) *
+                    </label>
+                    <input
+                      className="input-field"
+                      type="number"
+                      value={feedForm.bag_size_kg}
+                      onChange={e => setFeed('bag_size_kg', e.target.value)}
+                      min={0}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      Price per bag (₦)
+                    </label>
+                    <input
+                      className="input-field"
+                      type="number"
+                      placeholder="optional"
+                      value={feedForm.bag_price}
+                      onChange={e => setFeed('bag_price', e.target.value)}
+                      min={0}
+                    />
+                  </div>
+                </div>
+
+                {bagsKg > 0 && (
+                  <p className="text-xs text-gray-500">
+                    = {bagsKg} kg
+                    {bagsCost > 0 && ` · ₦${bagsCost.toLocaleString()}`}
+                  </p>
+                )}
+              </div>
+            )}
             {/* Date */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Date</label>

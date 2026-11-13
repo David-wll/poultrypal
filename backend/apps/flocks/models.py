@@ -50,6 +50,9 @@ class Flock(models.Model):
         max_length=20, choices=STATUS_CHOICES, default='active'
     )
     notes = models.TextField(blank=True)
+    purchase_cost = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 

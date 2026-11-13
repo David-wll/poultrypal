@@ -261,6 +261,17 @@ export default function Reports({ flockId, navigate }) {
                 Cost Breakdown
               </p>
 
+              {parseFloat(report.purchase_cost) > 0 && (
+                <ProgressBar
+                  label="Birds Purchase"
+                  value={parseFloat(report.purchase_cost)}
+                  displayValue={`₦${parseFloat(report.purchase_cost).toLocaleString()}`}
+                  max={report.total_expenses}
+                  color="text-rose-600"
+                  bg="bg-rose-400"
+                />
+              )}
+
               <ProgressBar
                 label="Feed Cost"
                 value={parseFloat(report.feed_cost)}

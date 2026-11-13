@@ -48,6 +48,7 @@ export default function AddFlock({ navigate }) {
     arrival_date: new Date().toISOString().split('T')[0],
     housing_type: 'deep_litter',
     notes: '',
+    purchase_cost: '',
   })
 
   const set = (field, value) => {
@@ -81,6 +82,7 @@ export default function AddFlock({ navigate }) {
       await createFlock({
         ...form,
         initial_count: parseInt(form.initial_count),
+        purchase_cost: form.purchase_cost ? parseFloat(form.purchase_cost) : null,   // new
       })
       await fetchFlocks()
       setSuccess(true)
@@ -296,6 +298,32 @@ export default function AddFlock({ navigate }) {
                   />
                   <span className="px-4 text-sm text-gray-400 font-medium">birds</span>
                 </div>
+              </div>
+
+              {/* Purchase cost (optional) */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Amount Paid for the Birds (optional)
+                </label>
+                <div className="flex items-center border-2 border-gray-200 rounded-2xl
+                                bg-gray-50 overflow-hidden focus-within:border-primary-500
+                                focus-within:bg-white transition-all duration-200">
+                  <span className="px-4 text-sm font-bold text-gray-400">₦</span>
+                  <input
+                    className="flex-1 py-3.5 pr-4 bg-transparent text-base text-gray-900
+                               outline-none font-bold"
+                    type="number"
+                    placeholder="e.g. 300000"
+                    value={form.purchase_cost}
+                    onChange={e => set('purchase_cost', e.target.value)}
+                    min={0}
+                  />
+                </div>
+                {form.purchase_cost && form.initial_count > 0 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    ≈ ₦{Math.round(form.purchase_cost / form.initial_count).toLocaleString()} per bird
+                  </p>
+                )}
               </div>
 
               {/* Arrival date */}

@@ -10,7 +10,9 @@ class FeedLog(models.Model):
     feed_type = models.CharField(max_length=50)  # Starter, Grower, Finisher
     feed_brand = models.CharField(max_length=50, blank=True)
     quantity_kg = models.DecimalField(max_digits=6, decimal_places=2)
-    cost_naira = models.DecimalField(max_digits=10, decimal_places=2)
+    bags = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    bag_size_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cost_naira = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -6,6 +6,7 @@ class FlockSerializer(serializers.ModelSerializer):
     days_alive = serializers.SerializerMethodField()
     days_remaining = serializers.SerializerMethodField()
     survival_rate = serializers.SerializerMethodField()
+    purchase_cost_per_bird = serializers.SerializerMethodField()
 
     class Meta:
         model = Flock
@@ -13,13 +14,19 @@ class FlockSerializer(serializers.ModelSerializer):
             'id', 'farmer', 'batch_name', 'bird_type', 'breed',
             'housing_type', 'initial_count', 'current_count',
             'arrival_date', 'expected_harvest_date', 'status',
-            'notes', 'created_at',
+            'notes', 'created_at', 'purchase_cost',
             'days_alive', 'days_remaining', 'survival_rate',
+            'purchase_cost_per_bird',
         ]
         read_only_fields = [
             'id', 'farmer', 'current_count',
             'expected_harvest_date', 'created_at'
         ]
+
+    def get_purchase_cost_per_bird(self, obj):
+        if obj.purchase_cost is None or obj.initial_count == 0:
+            return None
+        return float(round(obj.purchase_cost / obj.initial_count, 2))
 
     def get_days_alive(self, obj):
         return (date.today() - obj.arrival_date).days
@@ -40,7 +47,7 @@ class FlockCreateSerializer(serializers.ModelSerializer):
         model = Flock
         fields = [
             'batch_name', 'bird_type', 'breed',
-            'housing_type', 'initial_count', 'arrival_date', 'notes'
+            'housing_type', 'initial_count', 'arrival_date', 'notes', 'purchase_cost',
         ]
 
     def validate_initial_count(self, value):
@@ -51,6 +58,11 @@ class FlockCreateSerializer(serializers.ModelSerializer):
     def validate_arrival_date(self, value):
         if value > date.today():
             raise serializers.ValidationError("Arrival date cannot be in the future")
+        return value
+
+    def validate_purchase_cost(self, value):                        # new
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Amount cannot be negative")
         return value
 
     def create(self, validated_data):
