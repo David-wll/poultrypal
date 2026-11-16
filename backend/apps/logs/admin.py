@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import FeedBag, FeedLog
 
-# Register your models here.
+admin.site.register(FeedBag)
+admin.site.register(FeedLog)

@@ -5,7 +5,7 @@ import {
 } from '@mui/icons-material'
 import { CircularProgress } from '@mui/material'
 import { getFlockById } from '../services/flockService'
-import { logFeed, logMortality, logEggs, logExpense } from '../services/logService'
+import { logFeed, logMortality, logEggs, logExpense, getFeedBags } from '../services/logService'
 import { calcSurvivalRate } from '../utils/survivalRate'
 import { getDrugs, logMedication } from '../services/vaccineService'
 
@@ -43,6 +43,15 @@ export default function LogToday({ flockId, navigate }) {
     try { return JSON.parse(localStorage.getItem('feedBagPrefs')) || {} }
     catch { return {} }
   })()
+
+  const [openBag, setOpenBag] = useState(null)
+
+  useEffect(() => {
+    if (!flockId) return
+    getFeedBags(flockId)
+      .then(r => setOpenBag(r.data.open_bag))
+      .catch(() => {})
+  }, [flockId])
 
   const [feedForm, setFeedForm] = useState({
     feed_type: 'Starter', feed_brand: '',
@@ -398,6 +407,15 @@ export default function LogToday({ flockId, navigate }) {
                 onChange={e => setFeed('feed_brand', e.target.value)}
               />
             </div>
+
+            {openBag && (
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3
+                              text-xs text-amber-900 leading-relaxed">
+                🌾 A feed bag is open for this flock. You don't need to log feed every
+                day. If you log feed here as well, it's counted as part of the bag, and
+                the rest is shared over the days you didn't log.
+              </div>
+            )}
 
             {/* Unit toggle */}
             <div className="flex bg-gray-100 rounded-2xl p-1">

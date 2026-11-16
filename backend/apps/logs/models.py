@@ -1,5 +1,6 @@
 from django.db import models
 import uuid
+from datetime import date
 
 class FeedLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -13,6 +14,12 @@ class FeedLog(models.Model):
     bags = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     bag_size_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     cost_naira = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    # Filled in automatically when a feed bag is finished (not typed by the farmer)
+    is_estimate = models.BooleanField(default=False)
+    bag = models.ForeignKey(
+        'FeedBag', null=True, blank=True,
+        on_delete=models.CASCADE, related_name='estimated_logs'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -88,3 +95,46 @@ class ExpenseLog(models.Model):
 
     def __str__(self):
         return f"{self.flock.batch_name} — {self.category} {self.date}"
+
+class FeedBag(models.Model):
+    """One bag of feed: opened on a date, finished on a later date."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    flock = models.ForeignKey(
+        'flocks.Flock', on_delete=models.CASCADE, related_name='feed_bags'
+    )
+    opened_on = models.DateField()
+    finished_on = models.DateField(null=True, blank=True)
+    bag_size_kg = models.DecimalField(max_digits=5, decimal_places=2)
+    price_naira = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    feed_type = models.CharField(max_length=50, blank=True)
+    birds_at_finish = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.flock.batch_name} — bag opened {self.opened_on}"
+
+    @property
+    def days_used(self):
+        # Inclusive: opened Monday, finished Thursday = 4 days of feeding
+        end = self.finished_on or date.today()
+        return max(1, (end - self.opened_on).days + 1)
+
+    @property
+    def kg_per_day(self):
+        if not self.finished_on:
+            return None
+        return float(round(self.bag_size_kg / self.days_used, 2))
+
+    @property
+    def cost_per_day(self):
+        if not self.finished_on:
+            return None
+        return float(round(self.price_naira / self.days_used, 2))
+
+    @property
+    def grams_per_bird_per_day(self):
+        if not self.finished_on or not self.birds_at_finish:
+            return None
+        return float(round(
+            self.bag_size_kg * 1000 / self.days_used / self.birds_at_finish, 1
+        ))

@@ -15,6 +15,7 @@ import { calcSurvivalRate } from '../utils/survivalRate'
 import { deleteFlock } from '../services/flockService'
 import { useFlocks } from '../context/FlockContext'
 import HealthCheckForm from '../components/HealthCheckForm';
+import FeedBagCard from '../components/FeedBagCard'
 
 const BIRD_EMOJI = {
   broiler: '🐔', layer: '🥚', cockerel: '🐓', turkey: '🦃', duck: '🦆'
@@ -509,6 +510,14 @@ export default function FlockDetail({ flockId, navigate }) {
               ))}
             </div>
           </div>
+        )}
+
+        {flock.status === 'active' && (
+             <FeedBagCard
+                flockId={flockId}
+                feedLogs={feedLogs}
+                onChange={() => getFeedLogs(flockId).then(r => setFeedLogs(r.data))}
+              />
         )}
 
         {/* ── Feed Tab ── */}

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import FeedLog, MortalityLog, EggProductionLog, ExpenseLog
 from decimal import Decimal
+from .models import FeedBag, FeedLog, MortalityLog, EggProductionLog, ExpenseLog
 
 class FeedLogSerializer(serializers.ModelSerializer):
     quantity_kg = serializers.DecimalField(
@@ -11,9 +12,9 @@ class FeedLogSerializer(serializers.ModelSerializer):
         model = FeedLog
         fields = [
             'id', 'flock', 'date', 'feed_type', 'feed_brand',
-            'quantity_kg', 'bags', 'bag_size_kg', 'cost_naira', 'created_at'
+            'quantity_kg', 'bags', 'bag_size_kg', 'cost_naira', 'is_estimate', 'created_at'
         ]
-        read_only_fields = ['id', 'flock', 'created_at']
+        read_only_fields = ['id', 'flock', 'is_estimate', 'created_at']
 
     def validate(self, attrs):
         # Bags entry: derive kg from bags x bag size
@@ -63,3 +64,34 @@ class ExpenseLogSerializer(serializers.ModelSerializer):
             'description', 'amount_naira', 'created_at'
         ]
         read_only_fields = ['id', 'flock', 'created_at']
+
+class FeedBagSerializer(serializers.ModelSerializer):
+    days_used = serializers.ReadOnlyField()
+    kg_per_day = serializers.ReadOnlyField()
+    cost_per_day = serializers.ReadOnlyField()
+    grams_per_bird_per_day = serializers.ReadOnlyField()
+
+    class Meta:
+        model = FeedBag
+        fields = [
+            'id', 'opened_on', 'finished_on', 'bag_size_kg', 'price_naira',
+            'feed_type', 'birds_at_finish', 'days_used', 'kg_per_day',
+            'cost_per_day', 'grams_per_bird_per_day',
+        ]
+
+
+class FeedBagOpenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeedBag
+        fields = ['bag_size_kg', 'price_naira', 'feed_type', 'opened_on']
+        extra_kwargs = {'opened_on': {'required': False}}
+
+    def validate_bag_size_kg(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Bag size must be greater than 0.')
+        return value
+
+    def validate_price_naira(self, value):
+        if value < 0:
+            raise serializers.ValidationError('Price cannot be negative.')
+        return value

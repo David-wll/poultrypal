@@ -23,3 +23,12 @@ export const getExpenseLogs = (flockId) =>
 
 export const logExpense = (flockId, data) =>
   api.post(`/logs/${flockId}/expenses/`, data)
+
+export const getFeedBags = (flockId) =>
+  api.get(`/logs/${flockId}/bags/`)
+
+export const openFeedBag = (flockId, data) =>
+  api.post(`/logs/${flockId}/bags/`, data)
+
+export const finishFeedBag = (flockId, bagId, data = {}) =>
+  api.post(`/logs/${flockId}/bags/${bagId}/finish/`, data)
